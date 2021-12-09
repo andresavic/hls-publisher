@@ -32,7 +32,7 @@ class Receiver {
         this.server.datastore = new tus.FileStore({
             path: '/files'
         });
-        const host = '127.0.0.1';
+        const host = '0.0.0.0';
         const port = 1080;
         this.server.listen({ host, port }, () => {
             console.log(`[${new Date().toLocaleTimeString()}] tus server listening at http://${host}:${port}`);
