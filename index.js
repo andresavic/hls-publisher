@@ -2,6 +2,9 @@ const fs = require('fs');
 const m3u8Parser = require('m3u8-parser');
 const tus = require('tus-js-client');
 
+const FILE_SERVER = 'http://23.88.119.203:1080/files/';
+//const FILE_SERVER = 'http://0.0.0.0:1080/files/';
+
 class Publisher {
     constructor(path, playlist) {
       this.playlist = playlist;
@@ -38,19 +41,21 @@ class Publisher {
         console.log(parsedManifest);
 
         parsedManifest.segments.forEach((segment) => {
-            if (this.queue.includes(segment)) {
-                console.log("Segement " + segment + " already in queue");
+            if (this.queue.includes(segment.uri)) {
+                console.log("Segement " + segment.uri + " already in queue");
                 return;
             }
 
-            this.queue.push(segment);
+            this.queue.push(segment.uri);
 
-            console.log("Add " + segment + " to upload queue");
+            console.log("Add " + segment.uri + " to upload queue");
 
             this.upload(segment.uri, (filename) => {
                 this.uploaded.push(filename);
-                this.checkManifestFinishedUpload(parsedManifest, manifest);
+                //this.checkManifestFinishedUpload(parsedManifest, manifest);
             });
+
+            console.log(this.uploaded.length + "/" + this.queue.length);
         })
         //this.addQueue(manifest);
     }
@@ -80,7 +85,7 @@ class Publisher {
         var size = fs.statSync(path).size;
 
         var options = {
-            endpoint: 'http://127.0.0.1:1080/files/',
+            endpoint: FILE_SERVER,
             retryDelays: [0, 1000, 2500, 5000, 10000],
             metadata: {
               filename: filename,
