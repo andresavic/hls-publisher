@@ -18,6 +18,7 @@ const metadataStringToObject = (stringValue) => {
 class Receiver {
     constructor() {
         this.server = new tus.Server();
+        this.currentSegment = 0;
     }
 
  
@@ -38,12 +39,46 @@ class Receiver {
         });
 
         this.server.on(tus.EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
+
+            const segment = metadataStringToObject(event.file.upload_metadata).filename;
             const oldPath = `${storageFolder}/${event.file.id}`
             const newPath = `${storageFolder}/${metadataStringToObject(event.file.upload_metadata).filename}`
             
+
             fs.rename(oldPath, newPath, (err) => {
               // handle error in here
               //console.error(err)
+
+                let segmentId = +segment.replace('stream', '').replace('.ts', '');
+
+                if (this.currentSegment >= segmentId) {
+                    return;
+                }
+
+const manifest = `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:2
+#EXT-X-MEDIA-SEQUENCE:${segmentId}
+#EXTINF:2.000000,
+stream${segmentId - 4}.ts
+#EXTINF:2.000000,
+stream${segmentId - 3}.ts
+#EXTINF:2.000000,
+stream${segmentId - 2}.ts
+#EXTINF:2.000000,
+stream${segmentId - 1}.ts
+#EXTINF:2.000000,
+stream${segmentId}.ts`;
+
+                fs.writeFile(storageFolder + '/stream.m3u8', manifest, err => {
+                    if (err) {
+                      console.error(err)
+                      return
+                    }
+
+                    console.log("Manifrest refreshed");
+                });
+
             })
           })
     }
