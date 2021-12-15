@@ -40,10 +40,12 @@ class Receiver {
 
         this.server.on(tus.EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
 
-            const segment = metadataStringToObject(event.file.upload_metadata).filename;
+     
             const oldPath = `${storageFolder}/${event.file.id}`
             const newPath = `${storageFolder}/stream${this.currentSegment}.ts`
             
+            const currentPos = metadataStringToObject(event.file.upload_metadata).currentPos;
+            const queueLength = metadataStringToObject(event.file.upload_metadata).queueLength;
 
             fs.rename(oldPath, newPath, (err) => {
               // handle error in here
@@ -72,7 +74,7 @@ ${segments.join('\n')}
 
                     this.currentSegment += 1;
 
-                    console.log("Manifrest refreshed");
+                    console.log("Segmnet: " + this.currentSegment + " Client Stats: " + currentPos + "/" + queueLength);
                 });
 
             })
