@@ -56,7 +56,8 @@ class Receiver {
                 }
 
 const manifest = `#EXTM3U
-#EXT-X-VERSION:3
+#EXT-X-PLAYLIST-TYPE:EVENT
+#EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:2
 #EXT-X-MEDIA-SEQUENCE:${segmentId}
 #EXTINF:2.000000,
