@@ -18,7 +18,7 @@ const metadataStringToObject = (stringValue) => {
 class Receiver {
     constructor() {
         this.server = new tus.Server();
-        this.currentSegment = 0;
+        this.streams = {}
     }
 
  
@@ -43,7 +43,10 @@ class Receiver {
      
             const oldPath = `${storageFolder}/${event.file.id}`
             const key = metadataStringToObject(event.file.upload_metadata).key;
-            const newPath = `${storageFolder}/${key}-stream${this.currentSegment}.ts`
+
+            let currentSegment = this.streams[key]?.currentSegment || 0;
+
+            const newPath = `${storageFolder}/${key}-stream${currentSegment}.ts`
             const currentPos = metadataStringToObject(event.file.upload_metadata).currentPos;
             const queueLength = metadataStringToObject(event.file.upload_metadata).queueLength;
 
@@ -52,7 +55,7 @@ class Receiver {
               //console.error(err)
 
                 //let segmentId = +segment.replace('stream', '').replace('.ts', '');
-                let segments = Array.from(Array(this.currentSegment + 1).keys()).map((id) => {
+                let segments = Array.from(Array(currentSegment + 1).keys()).map((id) => {
                     return `#EXTINF:2.000000,
 ${key}-stream${id}.ts`;
                 });
@@ -72,9 +75,11 @@ ${segments.join('\n')}
                       return
                     }
 
-                    this.currentSegment += 1;
+                    console.log("[" + key + "] Segment: " + currentSegment + " Client Stats: " + currentPos + "/" + queueLength + " (" + (queueLength - currentPos)  + ")");
 
-                    console.log("[" + key + "] Segment: " + this.currentSegment + " Client Stats: " + currentPos + "/" + queueLength + " (" + (queueLength - currentPos)  + ")");
+                    this.streams[key] = {
+                        currentSegment: (this.streams[key]?.currentSegment || 0) + 1
+                    }
                 });
 
             })
