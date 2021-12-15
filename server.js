@@ -42,40 +42,35 @@ class Receiver {
 
             const segment = metadataStringToObject(event.file.upload_metadata).filename;
             const oldPath = `${storageFolder}/${event.file.id}`
-            const newPath = `${storageFolder}/${metadataStringToObject(event.file.upload_metadata).filename}`
+            const newPath = `${storageFolder}/stream${this.currentSegment}.ts`
             
 
             fs.rename(oldPath, newPath, (err) => {
               // handle error in here
               //console.error(err)
 
-                let segmentId = +segment.replace('stream', '').replace('.ts', '');
+                //let segmentId = +segment.replace('stream', '').replace('.ts', '');
+                let segments = Array.from(Array(this.currentSegment + 1).keys()).map((id) => {
+                    return `#EXTINF:2.000000,
+stream${id}.ts`;
+                });
 
-                if (this.currentSegment >= segmentId) {
-                    return;
-                }
-
+                
 const manifest = `#EXTM3U
 #EXT-X-PLAYLIST-TYPE:EVENT
 #EXT-X-VERSION:4
 #EXT-X-TARGETDURATION:2
-#EXT-X-MEDIA-SEQUENCE:${segmentId - 10}
-#EXTINF:2.000000,
-stream${segmentId - 4}.ts
-#EXTINF:2.000000,
-stream${segmentId - 3}.ts
-#EXTINF:2.000000,
-stream${segmentId - 2}.ts
-#EXTINF:2.000000,
-stream${segmentId - 1}.ts
-#EXTINF:2.000000,
-stream${segmentId}.ts`;
+#EXT-X-MEDIA-SEQUENCE:0
+${segments.join('\n')}
+`;
 
                 fs.writeFile(storageFolder + '/stream.m3u8', manifest, err => {
                     if (err) {
                       console.error(err)
                       return
                     }
+
+                    this.currentSegment += 1;
 
                     console.log("Manifrest refreshed");
                 });
