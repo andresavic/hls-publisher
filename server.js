@@ -42,8 +42,8 @@ class Receiver {
 
      
             const oldPath = `${storageFolder}/${event.file.id}`
-            const newPath = `${storageFolder}/stream${this.currentSegment}.ts`
-            
+            const key = metadataStringToObject(event.file.upload_metadata).key;
+            const newPath = `${storageFolder}/${key}-stream${this.currentSegment}.ts`
             const currentPos = metadataStringToObject(event.file.upload_metadata).currentPos;
             const queueLength = metadataStringToObject(event.file.upload_metadata).queueLength;
 
@@ -54,7 +54,7 @@ class Receiver {
                 //let segmentId = +segment.replace('stream', '').replace('.ts', '');
                 let segments = Array.from(Array(this.currentSegment + 1).keys()).map((id) => {
                     return `#EXTINF:2.000000,
-stream${id}.ts`;
+${key}-stream${id}.ts`;
                 });
 
                 
@@ -66,7 +66,7 @@ const manifest = `#EXTM3U
 ${segments.join('\n')}
 `;
 
-                fs.writeFile(storageFolder + '/stream.m3u8', manifest, err => {
+                fs.writeFile(storageFolder + '/' + key + '.m3u8', manifest, err => {
                     if (err) {
                       console.error(err)
                       return
@@ -74,7 +74,7 @@ ${segments.join('\n')}
 
                     this.currentSegment += 1;
 
-                    console.log("Segmnet: " + this.currentSegment + " Client Stats: " + currentPos + "/" + queueLength);
+                    console.log("[" + key + "] Segment: " + this.currentSegment + " Client Stats: " + currentPos + "/" + queueLength + " (" + (queueLength - currentPos)  + ")");
                 });
 
             })
