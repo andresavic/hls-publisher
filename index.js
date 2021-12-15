@@ -27,6 +27,8 @@ class Publisher {
             })
 
         });
+
+    
     }
 
 
@@ -38,7 +40,7 @@ class Publisher {
 
         var parsedManifest = parser.manifest;
 
-        console.log(parsedManifest);
+        //console.log(parsedManifest);
 
         parsedManifest.segments.forEach((segment) => {
             if (this.queue.includes(segment.uri)) {
@@ -47,36 +49,35 @@ class Publisher {
             }
 
             this.queue.push(segment.uri);
-
             console.log("Add " + segment.uri + " to upload queue");
-
-            this.upload(segment.uri, (filename) => {
-                this.uploaded.push(filename);
-                //this.checkManifestFinishedUpload(parsedManifest, manifest);
-            });
-
-            console.log(this.uploaded.length + "/" + this.queue.length);
         })
+        
+
+        if (this.uploaded.length === 0) {
+            this.work(0);
+        }
         //this.addQueue(manifest);
     }
 
-    checkManifestFinishedUpload(parsedManifest, manifest) {
-        let finished = parsedManifest.segments.every((seg) => {
-            return this.uploaded.includes(seg.uri);
-        })
+    
 
-        if (finished) {
-            fs.writeFile(this.path + 'temp.m3u8', manifest, err => {
-                if (err) {
-                  console.error(err)
-                  return
-                }
-                this.upload('temp.m3u8', () => {
-                    console.log("Manifest uploaded");
-                })
-            })
-            console.log("Upload MANIFEST");
+    work(pos) {
+        console.log(this.uploaded.length + "/" + this.queue.length);
+        if (this.queue[pos] === undefined) {
+            setTimeout(() => {
+                this.work(pos);
+            }, 500);
+            return;
         }
+        console.log("Work on: " + this.queue[pos]);
+        this.upload(this.queue[pos], (filename) => {
+            this.uploaded.push(filename);
+            console.log('Upload finished: ' + filename);
+            //this.checkManifestFinishedUpload(parsedManifest, manifest);
+            if (this.queue.length > pos) {
+                this.work(pos + 1);
+            }
+        });
     }
 
     upload(filename, successCallback) {
@@ -86,7 +87,7 @@ class Publisher {
 
         var options = {
             endpoint: FILE_SERVER,
-            retryDelays: [0, 1000, 2500, 5000, 10000],
+            retryDelays: [0, 1000, 2000, 4000, 8000, 10000, 15000, 20000, 30000, 40000, 50000, 60000],
             metadata: {
               filename: filename,
               filetype: 'application/octet-stream',
@@ -97,11 +98,10 @@ class Publisher {
             },
             onProgress (bytesUploaded, bytesTotal) {
               var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2)
-              //console.log(bytesUploaded, bytesTotal, `${percentage}%`)
+              console.log(`${percentage}% - ${bytesUploaded}/${bytesTotal}`)
             },
             onSuccess () {
               successCallback && successCallback(filename);
-              console.log('Upload finished: ' + filename);
             },
         }
           
